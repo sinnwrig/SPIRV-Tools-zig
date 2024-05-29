@@ -173,8 +173,7 @@ fn buildSPIRVVersion(allocator: std.mem.Allocator) void {
 }
 
 fn generateSPIRVHeaders(allocator: std.mem.Allocator) void {
-    utils.ensureGitRepoCloned(allocator, spv_headers_repo, "", sdkPath("/external"), sdkPath("/external/SPIRV-Headers")) catch |err|
-    {
+    utils.ensureGitRepoCloned(allocator, spv_headers_repo, "", sdkPath("/external"), sdkPath("/external/SPIRV-Headers")) catch |err| {
         log.err("Could not clone git repo. error: {s}", .{ @errorName(err) });
         std.process.exit(1);
     };
@@ -222,7 +221,7 @@ pub const BuildSPIRVHeadersStep = struct {
         build_headers.* = .{
             .step = std.Build.Step.init(.{
                 .id = .custom,
-                .name = "generate grammar",
+                .name = "Build SPIRV header files.",
                 .owner = b,
                 .makeFn = &make,
             }),

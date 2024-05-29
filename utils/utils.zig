@@ -3,6 +3,7 @@ const builtin = @import("builtin");
 
 const log = std.log.scoped(.utility);
 
+
 pub fn ensureCommandExists(allocator: std.mem.Allocator, name: []const u8, exist_check: []const u8) bool {
     const result = std.ChildProcess.run(.{
         .allocator = allocator,
@@ -24,6 +25,7 @@ pub fn ensureCommandExists(allocator: std.mem.Allocator, name: []const u8, exist
     return true;
 }
 
+
 pub fn exec(allocator: std.mem.Allocator, argv: []const []const u8, cwd: []const u8) !void {
     log.info("cd {s}", .{cwd});
 
@@ -39,6 +41,7 @@ pub fn exec(allocator: std.mem.Allocator, argv: []const []const u8, cwd: []const
     _ = try child.spawnAndWait();
 }
 
+
 pub fn execSilent(allocator: std.mem.Allocator, argv: []const []const u8, cwd: []const u8) !void {
     var buf = std.ArrayList(u8).init(allocator);
     for (argv) |arg| {
@@ -50,12 +53,14 @@ pub fn execSilent(allocator: std.mem.Allocator, argv: []const []const u8, cwd: [
     _ = try child.spawnAndWait();
 }
 
+
 pub fn ensureGit(allocator: std.mem.Allocator) void {
     if (!ensureCommandExists(allocator, "git", "--version")) {
         log.err("'git --version' failed. Is git not installed?", .{});
         std.process.exit(1);
     }
 }
+
 
 pub fn isEnvVarTruthy(allocator: std.mem.Allocator, name: []const u8) bool {
     if (std.process.getEnvVarOwned(allocator, name)) |truthy| {
@@ -66,6 +71,7 @@ pub fn isEnvVarTruthy(allocator: std.mem.Allocator, name: []const u8) bool {
         return false;
     }
 }
+
 
 pub fn ensureGitRepoCloned(allocator: std.mem.Allocator, clone_url: []const u8, revision: []const u8, parent_dir: []const u8, repo_dir: []const u8) !void {
     if (isEnvVarTruthy(allocator, "NO_ENSURE_SUBMODULES") or isEnvVarTruthy(allocator, "NO_ENSURE_GIT")) {
@@ -109,6 +115,7 @@ pub fn ensureGitRepoCloned(allocator: std.mem.Allocator, clone_url: []const u8, 
         else => err,
     };
 }
+
 
 pub fn getCurrentGitRevision(allocator: std.mem.Allocator, cwd: []const u8) ![]const u8 {
     const result = try std.ChildProcess.run(.{ .allocator = allocator, .argv = &.{ "git", "rev-parse", "HEAD" }, .cwd = cwd });
