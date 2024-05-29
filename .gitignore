@@ -34,4 +34,6 @@ MODULE.bazel.lock
 /cmake-build-*/
 
 # VSCode
-/.vscode/*
+/.vscode/
+/zig-cache/
+/zig-out/
