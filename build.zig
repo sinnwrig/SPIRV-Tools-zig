@@ -22,6 +22,7 @@ pub fn build(b: *Build) !void {
 
 const SPVLibs = struct {
     tools: *std.Build.Step.Compile,
+    tools_val: *std.Build.Step.Compile,
     tools_opt: *std.Build.Step.Compile,
     tools_link: *std.Build.Step.Compile,
     tools_reduce: *std.Build.Step.Compile
@@ -69,7 +70,7 @@ pub fn build_spirv(b: *Build, optimize: std.builtin.OptimizeMode, target: std.Bu
     const build_headers = headers.BuildSPIRVHeadersStep.init(b);    
 
     lib_args.name = "SPIRV-Tools";
-    libs.tools = buildLibrary(b, &(spirv_tools ++ spirv_tools_util ++ spirv_tools_val), lib_args);
+    libs.tools = buildLibrary(b, &(spirv_tools ++ spirv_tools_util), lib_args);
 
     libs.tools.step.dependOn(&build_headers.step);
 
@@ -77,6 +78,20 @@ pub fn build_spirv(b: *Build, optimize: std.builtin.OptimizeMode, target: std.Bu
     install_tools_step.dependOn(&b.addInstallArtifact(libs.tools, .{}).step);
 
     b.installArtifact(libs.tools);
+
+// ------------------
+// SPIRV-Tools-val
+// ------------------
+
+    lib_args.name = "SPIRV-Tools-val";
+    libs.tools_val = buildLibrary(b, &spirv_tools_val, lib_args);
+
+    libs.tools_val.linkLibrary(libs.tools);
+
+    const install_val_step = b.step("SPIRV-Tools-val", "Build and install SPIRV-Tools-val");
+    install_val_step.dependOn(&b.addInstallArtifact(libs.tools_val, .{}).step);
+
+    b.installArtifact(libs.tools_val);
 
 // ------------------
 // SPIRV-Tools-opt
@@ -100,6 +115,7 @@ pub fn build_spirv(b: *Build, optimize: std.builtin.OptimizeMode, target: std.Bu
     libs.tools_link = buildLibrary(b, &spirv_tools_link, lib_args);
 
     libs.tools_link.linkLibrary(libs.tools);
+    libs.tools_link.linkLibrary(libs.tools_val);
     libs.tools_link.linkLibrary(libs.tools_opt);
 
     const install_link_step = b.step("SPIRV-Tools-link", "Build and install SPIRV-Tools-link");
