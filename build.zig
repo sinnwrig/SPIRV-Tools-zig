@@ -12,7 +12,7 @@ pub fn build(b: *Build) !void {
     const debug = b.option(bool, "debug", "Whether to produce detailed debug symbols (g0) or not. These increase binary size considerably.") orelse false;
     const shared = b.option(bool, "shared", "Build spirv-tools as a shared library") orelse false;
 
-    _ = build_spirv(b, optimize, target, shared, debug) catch |err| {
+    _ = build_spirv(b, optimize, target, shared, debug, "SPIRV-Headers") catch |err| {
         log.err("Error building SPIRV-Tools: {s}", .{ @errorName(err) });
         std.process.exit(1);
     }; 
@@ -28,7 +28,7 @@ pub const SPVLibs = struct {
 };
 
 
-pub fn build_spirv(b: *Build, optimize: std.builtin.OptimizeMode, target: std.Build.ResolvedTarget, shared: bool, debug: bool) !SPVLibs {
+pub fn build_spirv(b: *Build, optimize: std.builtin.OptimizeMode, target: std.Build.ResolvedTarget, shared: bool, debug: bool, comptime header_path: []const u8) !SPVLibs {
     var cppflags = std.ArrayList([]const u8).init(b.allocator);
 
     if (!debug) {
@@ -66,7 +66,7 @@ pub fn build_spirv(b: *Build, optimize: std.builtin.OptimizeMode, target: std.Bu
 // SPIRV-Tools
 // ------------------
 
-    const build_headers = headers.BuildSPIRVHeadersStep.init(b);    
+    const build_headers = headers.BuildSPIRVHeadersStep.init(b, header_path);    
 
     lib_args.name = "SPIRV-Tools";
     libs.tools = buildLibrary(b, &(spirv_tools ++ spirv_tools_util), lib_args);
@@ -212,13 +212,13 @@ fn buildLibrary(b: *Build, sources: []const []const u8, args: BuildArgs) *std.Bu
 
 // The stuff other libraries should have access to
 pub fn addSPIRVPublicIncludes(step: *std.Build.Step.Compile) void {
+    step.addIncludePath(.{ .path = sdkPath("/" ++ headers.spirv_output_path) });
     step.addIncludePath(.{ .path = sdkPath("/include") });
-    step.addIncludePath(.{ .path = sdkPath("/external/SPIRV-Headers/include") });
 }
 
 // The stuff only source files should have access to
-fn addSPIRVIncludes(step: *std.Build.Step.Compile) void {
-    step.addIncludePath(.{ .path = sdkPath("/" ++ headers.spirv_output_path) });
+fn addSPIRVIncludes(step: *std.Build.Step.Compile, comptime headers_path: []const u8 ) void {
+    step.addIncludePath(.{ .path = sdkPath("/" ++ headers_path ++ "/include") });
     step.addIncludePath(.{ .path = sdkPath("/") });
     addSPIRVPublicIncludes(step);
 }
