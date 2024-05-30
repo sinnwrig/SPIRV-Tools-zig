@@ -217,8 +217,8 @@ pub fn addSPIRVPublicIncludes(step: *std.Build.Step.Compile) void {
 }
 
 // The stuff only source files should have access to
-fn addSPIRVIncludes(step: *std.Build.Step.Compile, comptime headers_path: []const u8 ) void {
-    step.addIncludePath(.{ .path = sdkPath("/" ++ headers_path ++ "/include") });
+fn addSPIRVIncludes(step: *std.Build.Step.Compile) void {
+    step.addIncludePath(.{ .path = sdkPath("/" ++ headers.spirv_headers_path) });
     step.addIncludePath(.{ .path = sdkPath("/") });
     addSPIRVPublicIncludes(step);
 }
