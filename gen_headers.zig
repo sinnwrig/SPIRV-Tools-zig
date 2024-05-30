@@ -1,11 +1,43 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const utils = @import("utils/utils.zig");
 const Build = std.Build;
 
 pub const spv_headers_repo = "https://github.com/KhronosGroup/SPIRV-Headers";
 
 const log = std.log.scoped(.spirv_tools);
+
+fn ensureCommandExists(allocator: std.mem.Allocator, name: []const u8, exist_check: []const u8) bool {
+    const result = std.ChildProcess.run(.{
+        .allocator = allocator,
+        .argv = &[_][]const u8{ name, exist_check },
+        .cwd = ".",
+    }) catch // e.g. FileNotFound
+        {
+        return false;
+    };
+
+    defer {
+        allocator.free(result.stderr);
+        allocator.free(result.stdout);
+    }
+
+    if (result.term.Exited != 0)
+        return false;
+
+    return true;
+}
+
+
+fn exec(allocator: std.mem.Allocator, argv: []const []const u8, cwd: []const u8) !void {
+    var buf = std.ArrayList(u8).init(allocator);
+    for (argv) |arg| {
+        try std.fmt.format(buf.writer(), "{s} ", .{arg});
+    }
+
+    var child = std.ChildProcess.init(argv, allocator);
+    child.cwd = cwd;
+    _ = try child.spawnAndWait();
+}
 
 fn sdkPath(comptime suffix: []const u8) []const u8 {
     if (suffix[0] != '/') @compileError("suffix must be an absolute path");
@@ -16,7 +48,7 @@ fn sdkPath(comptime suffix: []const u8) []const u8 {
 }
 
 fn runPython(allocator: std.mem.Allocator, args: []const []const u8, errMsg: []const u8) void {
-    utils.execSilent(allocator, args, sdkPath("/")) catch |err|
+    exec(allocator, args, sdkPath("/")) catch |err|
     {
         log.err("{s}. error: {s}", .{ errMsg, @errorName(err) });
         std.process.exit(1);
@@ -181,7 +213,7 @@ fn generateSPIRVHeaders(allocator: std.mem.Allocator) void {
         std.process.exit(1);
     };
 
-    if (!utils.ensureCommandExists(allocator, "python3", "--version")) {
+    if (!ensureCommandExists(allocator, "python3", "--version")) {
         log.err("'python3 --version' failed. Is python not installed?", .{});
         std.process.exit(1);
     }

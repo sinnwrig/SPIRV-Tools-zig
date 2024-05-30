@@ -1,7 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const headers = @import("gen_headers.zig");
-const utils = @import("utils/utils.zig");
 const Build = std.Build;
 
 const log = std.log.scoped(.spirv_tools_zig);
