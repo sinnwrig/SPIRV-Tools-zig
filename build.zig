@@ -19,7 +19,7 @@ pub fn build(b: *Build) !void {
 }
 
 
-const SPVLibs = struct {
+pub const SPVLibs = struct {
     tools: *std.Build.Step.Compile,
     tools_val: *std.Build.Step.Compile,
     tools_opt: *std.Build.Step.Compile,
