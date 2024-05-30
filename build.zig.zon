@@ -1,0 +1,18 @@
+.{
+    .name = "SPIRV-Tools",
+    .version = "0.1.0",
+    .paths = .{
+        "external",
+        "source",
+        "build.zig",
+        "build.zig.zon",
+        ".mailmap",
+        "CONTRIBUTING.md",
+        "CHANGES.md",
+        "CODE_OF_CONDUCT.md",
+        "LICENSE",
+        "README.md",
+        "SECURITY.md",
+    },
+    .dependencies = .{},
+}
