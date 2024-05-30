@@ -12,7 +12,7 @@ pub fn build(b: *Build) !void {
     const debug = b.option(bool, "debug", "Whether to produce detailed debug symbols (g0) or not. These increase binary size considerably.") orelse false;
     const shared = b.option(bool, "shared", "Build spirv-tools as a shared library") orelse false;
 
-    _ = build_spirv(b, optimize, target, shared, debug, "SPIRV-Headers") catch |err| {
+    _ = build_spirv(b, optimize, target, shared, debug) catch |err| {
         log.err("Error building SPIRV-Tools: {s}", .{ @errorName(err) });
         std.process.exit(1);
     }; 
@@ -28,7 +28,7 @@ pub const SPVLibs = struct {
 };
 
 
-pub fn build_spirv(b: *Build, optimize: std.builtin.OptimizeMode, target: std.Build.ResolvedTarget, shared: bool, debug: bool, comptime header_path: []const u8) !SPVLibs {
+pub fn build_spirv(b: *Build, optimize: std.builtin.OptimizeMode, target: std.Build.ResolvedTarget, shared: bool, debug: bool) !SPVLibs {
     var cppflags = std.ArrayList([]const u8).init(b.allocator);
 
     if (!debug) {
@@ -66,7 +66,7 @@ pub fn build_spirv(b: *Build, optimize: std.builtin.OptimizeMode, target: std.Bu
 // SPIRV-Tools
 // ------------------
 
-    const build_headers = headers.BuildSPIRVHeadersStep.init(b, header_path);    
+    const build_headers = headers.BuildSPIRVHeadersStep.init(b);    
 
     lib_args.name = "SPIRV-Tools";
     libs.tools = buildLibrary(b, &(spirv_tools ++ spirv_tools_util), lib_args);
