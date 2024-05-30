@@ -173,8 +173,11 @@ fn buildSPIRVVersion(allocator: std.mem.Allocator) void {
 }
 
 fn generateSPIRVHeaders(allocator: std.mem.Allocator) void {
-    utils.ensureGitRepoCloned(allocator, spv_headers_repo, "", sdkPath("/external"), sdkPath("/external/SPIRV-Headers")) catch |err| {
-        log.err("Could not clone git repo. error: {s}", .{ @errorName(err) });
+    _ = std.fs.openDirAbsolute(sdkPath("/external/SPIRV-Headers"), .{}) catch |err| {
+        if (err == error.FileNotFound) {
+            log.err("SPIRV-Headers was not found - please checkout a copy under external/.", .{});
+        }
+
         std.process.exit(1);
     };
 

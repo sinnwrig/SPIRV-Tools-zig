@@ -1,6 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const headers = @import("generate_headers.zig");
+const headers = @import("gen_headers.zig");
 const utils = @import("utils/utils.zig");
 const Build = std.Build;
 
@@ -22,7 +22,6 @@ pub fn build(b: *Build) !void {
 
 const SPVLibs = struct {
     tools: *std.Build.Step.Compile,
-    tools_val: *std.Build.Step.Compile,
     tools_opt: *std.Build.Step.Compile,
     tools_link: *std.Build.Step.Compile,
     tools_reduce: *std.Build.Step.Compile
@@ -70,7 +69,7 @@ pub fn build_spirv(b: *Build, optimize: std.builtin.OptimizeMode, target: std.Bu
     const build_headers = headers.BuildSPIRVHeadersStep.init(b);    
 
     lib_args.name = "SPIRV-Tools";
-    libs.tools = buildLibrary(b, &(spirv_tools ++ spirv_tools_util), lib_args);
+    libs.tools = buildLibrary(b, &(spirv_tools ++ spirv_tools_util ++ spirv_tools_val), lib_args);
 
     libs.tools.step.dependOn(&build_headers.step);
 
@@ -78,20 +77,6 @@ pub fn build_spirv(b: *Build, optimize: std.builtin.OptimizeMode, target: std.Bu
     install_tools_step.dependOn(&b.addInstallArtifact(libs.tools, .{}).step);
 
     b.installArtifact(libs.tools);
-
-// ------------------
-// SPIRV-Tools-val
-// ------------------
-
-    lib_args.name = "SPIRV-Tools-val";
-    libs.tools_val = buildLibrary(b, &spirv_tools_val, lib_args);
-
-    libs.tools_val.linkLibrary(libs.tools);
-
-    const install_val_step = b.step("SPIRV-Tools-val", "Build and install SPIRV-Tools-val");
-    install_val_step.dependOn(&b.addInstallArtifact(libs.tools_val, .{}).step);
-
-    b.installArtifact(libs.tools_val);
 
 // ------------------
 // SPIRV-Tools-opt
@@ -115,7 +100,6 @@ pub fn build_spirv(b: *Build, optimize: std.builtin.OptimizeMode, target: std.Bu
     libs.tools_link = buildLibrary(b, &spirv_tools_link, lib_args);
 
     libs.tools_link.linkLibrary(libs.tools);
-    libs.tools_link.linkLibrary(libs.tools_val);
     libs.tools_link.linkLibrary(libs.tools_opt);
 
     const install_link_step = b.step("SPIRV-Tools-link", "Build and install SPIRV-Tools-link");
@@ -212,13 +196,13 @@ fn buildLibrary(b: *Build, sources: []const []const u8, args: BuildArgs) *std.Bu
 
 // The stuff other libraries should have access to
 pub fn addSPIRVPublicIncludes(step: *std.Build.Step.Compile) void {
-    step.addIncludePath(.{ .path = "include" });
-    step.addIncludePath(.{ .path = "external/SPIRV-Headers/include" });
+    step.addIncludePath(.{ .path = sdkPath("/include") });
+    step.addIncludePath(.{ .path = sdkPath("/external/SPIRV-Headers/include") });
 }
 
 // The stuff only source files should have access to
 fn addSPIRVIncludes(step: *std.Build.Step.Compile) void {
-    step.addIncludePath(.{ .path = headers.spirv_output_path });
+    step.addIncludePath(.{ .path = sdkPath("/" ++ headers.spirv_output_path) });
     step.addIncludePath(.{ .path = sdkPath("/") });
     addSPIRVPublicIncludes(step);
 }
