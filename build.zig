@@ -212,13 +212,13 @@ fn buildLibrary(b: *Build, sources: []const []const u8, args: BuildArgs) *std.Bu
 
 // The stuff other libraries should have access to
 pub fn addSPIRVPublicIncludes(step: *std.Build.Step.Compile) void {
-    step.addIncludePath(.{ .path = sdkPath("/" ++ headers.spirv_output_path) });
+    step.addIncludePath(.{ .path = sdkPath("/" ++ headers.spirv_headers_path ++ "/include") });
     step.addIncludePath(.{ .path = sdkPath("/include") });
 }
 
 // The stuff only source files should have access to
 fn addSPIRVIncludes(step: *std.Build.Step.Compile) void {
-    step.addIncludePath(.{ .path = sdkPath("/" ++ headers.spirv_headers_path) });
+    step.addIncludePath(.{ .path = sdkPath("/" ++ headers.spirv_output_path) });
     step.addIncludePath(.{ .path = sdkPath("/") });
     addSPIRVPublicIncludes(step);
 }
