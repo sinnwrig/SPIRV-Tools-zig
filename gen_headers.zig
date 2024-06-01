@@ -59,7 +59,7 @@ fn runPython(allocator: std.mem.Allocator, args: []const []const u8, errMsg: []c
 // SPIR-V include generation logic
 // ------------------------------------------
 
-pub const spirv_headers_path = "external/SPIRV-Headers";
+pub const external_path = "external/";
 pub const spirv_output_path = "build_spv_headers";
 
 const grammar_tables_script = "utils/generate_grammar_tables.py";
@@ -67,17 +67,21 @@ const language_headers_script = "utils/generate_language_headers.py";
 const build_version_script = "utils/update_build_version.py";
 const gen_registry_tables_script = "utils/generate_registry_tables.py";
 
-const debuginfo_insts_file = spirv_headers_path ++ "/include/spirv/unified1/extinst.debuginfo.grammar.json";
-const cldebuginfo100_insts_file = spirv_headers_path ++ "/include/spirv/unified1/extinst.opencl.debuginfo.100.grammar.json";
+const debuginfo_insts_file = "/include/spirv/unified1/extinst.debuginfo.grammar.json";
+const cldebuginfo100_insts_file = "/include/spirv/unified1/extinst.opencl.debuginfo.100.grammar.json";
 
-fn spvHeaderFile(comptime version: []const u8, comptime file_name: []const u8) []const u8 {
-    return spirv_headers_path ++ "/include/spirv/" ++ version ++ "/" ++ file_name;
+fn headerPath(comptime header_name: []const u8, comptime path: []const u8) []const u8 {
+    return external_path ++ header_name ++ path;
+}
+
+fn spvHeaderFile(comptime version: []const u8, comptime file_name: []const u8, comptime header_name: []const u8) []const u8 {
+    return headerPath(header_name, "/include/spirv/" ++ version ++ "/" ++ file_name);
 }
 
 // Script usage derived from the BUILD.gn
 
-fn genSPIRVCoreTables(allocator: std.mem.Allocator, comptime version: []const u8) void {
-    const core_json_file = spvHeaderFile(version, "spirv.core.grammar.json");
+fn genSPIRVCoreTables(allocator: std.mem.Allocator, comptime version: []const u8, comptime header_name: []const u8) void {
+    const core_json_file = spvHeaderFile(version, "spirv.core.grammar.json", header_name);
 
     // Outputs
     const core_insts_file = spirv_output_path ++ "/core.insts-" ++ version ++ ".inc";
@@ -87,8 +91,8 @@ fn genSPIRVCoreTables(allocator: std.mem.Allocator, comptime version: []const u8
         "python3", grammar_tables_script, 
         "--spirv-core-grammar", core_json_file, 
         "--core-insts-output", core_insts_file, 
-        "--extinst-debuginfo-grammar", debuginfo_insts_file, 
-        "--extinst-cldebuginfo100-grammar", cldebuginfo100_insts_file, 
+        "--extinst-debuginfo-grammar", headerPath(header_name, debuginfo_insts_file), 
+        "--extinst-cldebuginfo100-grammar", headerPath(header_name, cldebuginfo100_insts_file), 
         "--operand-kinds-output", operand_kinds_file, 
         "--output-language", "c++" 
     };
@@ -96,8 +100,8 @@ fn genSPIRVCoreTables(allocator: std.mem.Allocator, comptime version: []const u8
     runPython(allocator, args, "Failed to build SPIR-V core tables");
 }
 
-fn genSPIRVCoreEnums(allocator: std.mem.Allocator, comptime version: []const u8) void {
-    const core_json_file = spvHeaderFile(version, "spirv.core.grammar.json");
+fn genSPIRVCoreEnums(allocator: std.mem.Allocator, comptime version: []const u8, comptime header_name: []const u8) void {
+    const core_json_file = spvHeaderFile(version, "spirv.core.grammar.json", header_name);
 
     const extension_enum_file = spirv_output_path ++ "/extension_enum.inc";
     const extension_map_file = spirv_output_path ++ "/enum_string_mapping.inc";
@@ -105,8 +109,8 @@ fn genSPIRVCoreEnums(allocator: std.mem.Allocator, comptime version: []const u8)
     const args = &[_][]const u8{ 
         "python3", grammar_tables_script, 
         "--spirv-core-grammar", core_json_file, 
-        "--extinst-debuginfo-grammar", debuginfo_insts_file, 
-        "--extinst-cldebuginfo100-grammar", cldebuginfo100_insts_file, 
+        "--extinst-debuginfo-grammar", headerPath(header_name, debuginfo_insts_file), 
+        "--extinst-cldebuginfo100-grammar", headerPath(header_name, cldebuginfo100_insts_file), 
         "--extension-enum-output", extension_enum_file, 
         "--enum-string-mapping-output", extension_map_file, 
         "--output-language", "c++"
@@ -115,17 +119,17 @@ fn genSPIRVCoreEnums(allocator: std.mem.Allocator, comptime version: []const u8)
     runPython(allocator, args, "Failed to build SPIR-V core enums");
 }
 
-fn genSPIRVGlslTables(allocator: std.mem.Allocator, comptime version: []const u8) void {
-    const core_json_file = spvHeaderFile(version, "spirv.core.grammar.json");
-    const glsl_json_file = spvHeaderFile(version, "extinst.glsl.std.450.grammar.json");
+fn genSPIRVGlslTables(allocator: std.mem.Allocator, comptime version: []const u8, comptime header_name: []const u8) void {
+    const core_json_file = spvHeaderFile(version, "spirv.core.grammar.json", header_name);
+    const glsl_json_file = spvHeaderFile(version, "extinst.glsl.std.450.grammar.json", header_name);
 
     const glsl_insts_file = spirv_output_path ++ "/glsl.std.450.insts.inc";
 
     const args = &[_][]const u8{ 
         "python3", grammar_tables_script, 
         "--spirv-core-grammar", core_json_file, 
-        "--extinst-debuginfo-grammar", debuginfo_insts_file, 
-        "--extinst-cldebuginfo100-grammar", cldebuginfo100_insts_file, 
+        "--extinst-debuginfo-grammar", headerPath(header_name, debuginfo_insts_file), 
+        "--extinst-cldebuginfo100-grammar", headerPath(header_name, cldebuginfo100_insts_file), 
         "--extinst-glsl-grammar", glsl_json_file, 
         "--glsl-insts-output", glsl_insts_file, 
         "--output-language", "c++" 
@@ -134,17 +138,17 @@ fn genSPIRVGlslTables(allocator: std.mem.Allocator, comptime version: []const u8
     runPython(allocator, args, "Failed to build SPIR-V GLSL tables");
 }
 
-fn genSPIRVOpenCLTables(allocator: std.mem.Allocator, comptime version: []const u8) void {
-    const core_json_file = spvHeaderFile(version, "spirv.core.grammar.json");
-    const opencl_json_file = spvHeaderFile(version, "extinst.opencl.std.100.grammar.json");
+fn genSPIRVOpenCLTables(allocator: std.mem.Allocator, comptime version: []const u8, comptime header_name: []const u8) void {
+    const core_json_file = spvHeaderFile(version, "spirv.core.grammar.json", header_name);
+    const opencl_json_file = spvHeaderFile(version, "extinst.opencl.std.100.grammar.json", header_name);
 
     const opencl_insts_file = spirv_output_path ++ "/opencl.std.insts.inc";
 
     const args = &[_][]const u8{
         "python3", grammar_tables_script,
         "--spirv-core-grammar", core_json_file,
-        "--extinst-debuginfo-grammar", debuginfo_insts_file,
-        "--extinst-cldebuginfo100-grammar", cldebuginfo100_insts_file,
+        "--extinst-debuginfo-grammar", headerPath(header_name, debuginfo_insts_file),
+        "--extinst-cldebuginfo100-grammar", headerPath(header_name, cldebuginfo100_insts_file),
         "--extinst-opencl-grammar", opencl_json_file,
         "--opencl-insts-output", opencl_insts_file,
     };
@@ -164,8 +168,8 @@ fn genSPIRVLanguageHeader(allocator: std.mem.Allocator, comptime name: []const u
     runPython(allocator, args, "Failed to generate SPIR-V language header '" ++ name);
 }
 
-fn genSPIRVVendorTable(allocator: std.mem.Allocator, comptime name: []const u8, comptime operand_kind_tools_prefix: []const u8) void {
-    const extinst_vendor_grammar = spirv_headers_path ++ "/include/spirv/unified1/extinst." ++ name ++ ".grammar.json";
+fn genSPIRVVendorTable(allocator: std.mem.Allocator, comptime name: []const u8, comptime operand_kind_tools_prefix: []const u8, comptime header_name: []const u8) void {
+    const extinst_vendor_grammar = headerPath(header_name, "/include/spirv/unified1/extinst." ++ name ++ ".grammar.json");
     const extinst_file = spirv_output_path ++ "/" ++ name ++ ".insts.inc";
 
     const args = &[_][]const u8{
@@ -178,8 +182,8 @@ fn genSPIRVVendorTable(allocator: std.mem.Allocator, comptime name: []const u8, 
     runPython(allocator, args, "Failed to generate SPIR-V vendor table '" ++ name);
 }
 
-fn genSPIRVRegistryTables(allocator: std.mem.Allocator) void {
-    const xml_file = spirv_headers_path ++ "/include/spirv/spir-v.xml";
+fn genSPIRVRegistryTables(allocator: std.mem.Allocator, comptime header_name: []const u8) void {
+    const xml_file = headerPath(header_name, "/include/spirv/spir-v.xml");
     const inc_file = spirv_output_path ++ "/generators.inc";
 
     const args = &[_][]const u8{
@@ -191,9 +195,11 @@ fn genSPIRVRegistryTables(allocator: std.mem.Allocator) void {
     runPython(allocator, args, "Failed to generate SPIR-V registry tables");
 }
 
-fn buildSPIRVVersion(allocator: std.mem.Allocator) void {
+fn buildSPIRVVersion(allocator: std.mem.Allocator, comptime header_name: []const u8) void {
     const changes_file = "./CHANGES";
     const inc_file = spirv_output_path ++ "/build-version.inc";
+
+    _ = header_name;
 
     const args = &[_][]const u8{
         "python3", build_version_script,
@@ -204,8 +210,8 @@ fn buildSPIRVVersion(allocator: std.mem.Allocator) void {
     runPython(allocator, args, "Failed to generate SPIR-V build version");
 }
 
-fn generateSPIRVHeaders(allocator: std.mem.Allocator) void {
-    _ = std.fs.openDirAbsolute(sdkPath("/external/SPIRV-Headers"), .{}) catch |err| {
+fn generateSPIRVHeaders(allocator: std.mem.Allocator, comptime header_name: []const u8) void {
+    _ = std.fs.openDirAbsolute(sdkPath("/" ++ external_path ++ header_name), .{}) catch |err| {
         if (err == error.FileNotFound) {
             log.err("SPIRV-Headers was not found - please checkout a copy under external/.", .{});
         }
@@ -218,66 +224,70 @@ fn generateSPIRVHeaders(allocator: std.mem.Allocator) void {
         std.process.exit(1);
     }
 
-    genSPIRVCoreTables(allocator, "unified1");
-    genSPIRVCoreEnums(allocator, "unified1");
+    genSPIRVCoreTables(allocator, "unified1", header_name);
+    genSPIRVCoreEnums(allocator, "unified1", header_name);
 
-    genSPIRVGlslTables(allocator, "1.0");
+    genSPIRVGlslTables(allocator, "1.0", header_name);
 
-    genSPIRVOpenCLTables(allocator, "1.0");
+    genSPIRVOpenCLTables(allocator, "1.0", header_name);
 
-    genSPIRVLanguageHeader(allocator, "DebugInfo", spvHeaderFile("unified1", "extinst.debuginfo.grammar.json"));
-    genSPIRVLanguageHeader(allocator, "OpenCLDebugInfo100", spvHeaderFile("unified1", "extinst.opencl.debuginfo.100.grammar.json"));
-    genSPIRVLanguageHeader(allocator, "NonSemanticShaderDebugInfo100", spvHeaderFile("unified1", "extinst.nonsemantic.shader.debuginfo.100.grammar.json"));
+    genSPIRVLanguageHeader(allocator, "DebugInfo", spvHeaderFile("unified1", "extinst.debuginfo.grammar.json", header_name));
+    genSPIRVLanguageHeader(allocator, "OpenCLDebugInfo100", spvHeaderFile("unified1", "extinst.opencl.debuginfo.100.grammar.json", header_name));
+    genSPIRVLanguageHeader(allocator, "NonSemanticShaderDebugInfo100", spvHeaderFile("unified1", "extinst.nonsemantic.shader.debuginfo.100.grammar.json", header_name));
 
-    genSPIRVVendorTable(allocator, "spv-amd-shader-explicit-vertex-parameter", "...nil...");
-    genSPIRVVendorTable(allocator, "spv-amd-shader-trinary-minmax", "...nil...");
-    genSPIRVVendorTable(allocator, "spv-amd-gcn-shader", "...nil...");
-    genSPIRVVendorTable(allocator, "spv-amd-shader-ballot", "...nil...");
-    genSPIRVVendorTable(allocator, "debuginfo", "...nil...");
-    genSPIRVVendorTable(allocator, "opencl.debuginfo.100", "CLDEBUG100_");
-    genSPIRVVendorTable(allocator, "nonsemantic.clspvreflection", "...nil...");
-    genSPIRVVendorTable(allocator, "nonsemantic.vkspreflection", "...nil...");
-    genSPIRVVendorTable(allocator, "nonsemantic.shader.debuginfo.100", "SHDEBUG100_");
+    genSPIRVVendorTable(allocator, "spv-amd-shader-explicit-vertex-parameter", "...nil...", header_name);
+    genSPIRVVendorTable(allocator, "spv-amd-shader-trinary-minmax", "...nil...", header_name);
+    genSPIRVVendorTable(allocator, "spv-amd-gcn-shader", "...nil...", header_name);
+    genSPIRVVendorTable(allocator, "spv-amd-shader-ballot", "...nil...", header_name);
+    genSPIRVVendorTable(allocator, "debuginfo", "...nil...", header_name);
+    genSPIRVVendorTable(allocator, "opencl.debuginfo.100", "CLDEBUG100_", header_name);
+    genSPIRVVendorTable(allocator, "nonsemantic.clspvreflection", "...nil...", header_name);
+    genSPIRVVendorTable(allocator, "nonsemantic.vkspreflection", "...nil...", header_name);
+    genSPIRVVendorTable(allocator, "nonsemantic.shader.debuginfo.100", "SHDEBUG100_", header_name);
 
-    genSPIRVRegistryTables(allocator);
+    genSPIRVRegistryTables(allocator, header_name);
 
-    buildSPIRVVersion(allocator);
+    buildSPIRVVersion(allocator, header_name);
 }
 
 var build_mutex = std.Thread.Mutex{};
 
-pub const BuildSPIRVHeadersStep = struct {
-    step: std.Build.Step,
-    b: *std.Build,
+pub fn BuildSPIRVHeadersStep(comptime header_path: []const u8) type
+{
+    return struct {
+        headers: []const u8 = header_path,
+        step: std.Build.Step,
+        b: *std.Build,
 
-    pub fn init(b: *std.Build) *BuildSPIRVHeadersStep {
-        const build_headers = b.allocator.create(BuildSPIRVHeadersStep) catch unreachable;
+        pub fn init(b: *std.Build) *BuildSPIRVHeadersStep(header_path) {
+            const build_headers = b.allocator.create(BuildSPIRVHeadersStep(header_path)) catch unreachable;
 
-        build_headers.* = .{
-            .step = std.Build.Step.init(.{
-                .id = .custom,
-                .name = "Build SPIRV header files.",
-                .owner = b,
-                .makeFn = &make,
-            }),
-            .b = b,
-        };
+            build_headers.* = .{
+                .step = std.Build.Step.init(.{
+                    .id = .custom,
+                    .name = "Build SPIRV header files.",
+                    .owner = b,
+                    .makeFn = &make,
+                }),
+                .b = b,
+            };
 
-        return build_headers;
-    }
+            return build_headers;
+        }
 
-    fn make(step_ptr: *std.Build.Step, prog_node: *std.Progress.Node) anyerror!void {
-        _ = prog_node;
+        fn make(step_ptr: *std.Build.Step, prog_node: *std.Progress.Node) anyerror!void {
+            _ = prog_node;
 
-        const build_headers: *BuildSPIRVHeadersStep = @fieldParentPtr("step", step_ptr);
-        const b = build_headers.b;
+            const build_headers: *BuildSPIRVHeadersStep(header_path) = @fieldParentPtr("step", step_ptr);
+            const b = build_headers.b;
 
-        // Zig will run build steps in parallel if possible, so if there were two invocations of
-        // then this function would be called in parallel. We're manipulating the FS here
-        // and so need to prevent that.
-        build_mutex.lock();
-        defer build_mutex.unlock();
+            // Zig will run build steps in parallel if possible, so if there were two invocations of
+            // then this function would be called in parallel. We're manipulating the FS here
+            // and so need to prevent that.
+            build_mutex.lock();
+            defer build_mutex.unlock();
 
-        generateSPIRVHeaders(b.allocator);
-    }
-};
+            generateSPIRVHeaders(b.allocator, header_path);
+        }
+    };
+}
