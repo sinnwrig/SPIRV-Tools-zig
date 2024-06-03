@@ -78,7 +78,7 @@ pub fn build(b: *Build) !void {
 // SPIRV-Tools-val
 // ------------------
 
-    var tools_val: *Build.Step.Compile = null;
+    var tools_val: *Build.Step.Compile = undefined;
     if (!no_val)
     {
         lib_args.name = "SPIRV-Tools-val";
@@ -96,7 +96,7 @@ pub fn build(b: *Build) !void {
 // SPIRV-Tools-opt
 // ------------------
 
-    var tools_opt: *Build.Step.Compile = null;
+    var tools_opt: *Build.Step.Compile = undefined;
     if (!no_opt)
     {
         lib_args.name = "SPIRV-Tools-opt";
