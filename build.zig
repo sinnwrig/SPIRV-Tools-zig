@@ -11,45 +11,12 @@ pub fn build(b: *Build) !void {
     const target = b.standardTargetOptions(.{});
     const debug = b.option(bool, "debug", "Whether to produce detailed debug symbols (g0) or not. These increase binary size considerably.") orelse false;
     const shared = b.option(bool, "shared", "Build spirv-tools as a shared library") orelse false;
-    const build_headers = b.option(bool, "rebuild-headers", "Rebuild generated SPIRV-Headers. Requires python3 to be installed on the system.") orelse false;
+    const rebuild_headers = b.option(bool, "rebuild_headers", "Rebuild generated SPIRV-Headers. Requires python3 to be installed on the system.") orelse false;
+    const header_path = b.option([]const u8, "header_path", "Specify a custom SPIRV-Headers installation path. Defaults to external/SPIRV-Headers") orelse "external/SPIRV-Headers";
 
-    const options: ToolsBuildOptions = .{
-        .optimize = optimize, 
-        .target = target, 
-        .shared = shared, 
-        .debug = debug, 
-        .build_headers = build_headers, 
-    };
-
-    _ = buildSpirv(b, options, "external/SPIRV-Headers") catch |err| {
-        log.err("Error building SPIRV-Tools: {s}", .{ @errorName(err) });
-        std.process.exit(1);
-    }; 
-}
-
-
-pub const OutputLibs = struct {
-    tools: *std.Build.Step.Compile,
-    tools_val: *std.Build.Step.Compile,
-    tools_opt: *std.Build.Step.Compile,
-    tools_link: *std.Build.Step.Compile,
-    tools_reduce: *std.Build.Step.Compile
-};
-
-
-pub const ToolsBuildOptions = struct {
-    optimize: std.builtin.OptimizeMode, 
-    target: std.Build.ResolvedTarget, 
-    shared: bool, 
-    debug: bool, 
-    build_headers: bool,
-};
-
-
-pub fn buildSpirv(b: *Build, options: ToolsBuildOptions, comptime header_path: []const u8) !OutputLibs {
     var cppflags = std.ArrayList([]const u8).init(b.allocator);
 
-    if (!options.debug) {
+    if (!debug) {
         try cppflags.append("-g0");
     }
 
@@ -70,18 +37,16 @@ pub fn buildSpirv(b: *Build, options: ToolsBuildOptions, comptime header_path: [
 
     try cppflags.appendSlice(base_flags);
 
-    var libs: OutputLibs = undefined;
-
     var lib_args: BuildArgs = .{
         .cppflags = cppflags,
-        .optimize = options.optimize,
-        .target = options.target,
-        .shared = options.shared,
+        .optimize = optimize,
+        .target = target,
+        .shared = shared,
         .name = "",
     };
 
-    if (options.build_headers) {
-        headers.generateSPIRVHeaders(b.allocator, header_path);
+    if (rebuild_headers) {
+        headers.generateSPIRVHeaders(b, header_path);
     }
 
 // ------------------
@@ -89,73 +54,71 @@ pub fn buildSpirv(b: *Build, options: ToolsBuildOptions, comptime header_path: [
 // ------------------
 
     lib_args.name = "SPIRV-Tools";
-    libs.tools = buildLibrary(b, &(spirv_tools ++ spirv_tools_util), lib_args, header_path);
+    const tools = buildLibrary(b, &(spirv_tools ++ spirv_tools_util), lib_args, header_path);
 
     const install_tools_step = b.step("SPIRV-Tools", "Build and install SPIRV-Tools");
-    install_tools_step.dependOn(&b.addInstallArtifact(libs.tools, .{}).step);
+    install_tools_step.dependOn(&b.addInstallArtifact(tools, .{}).step);
 
-    b.installArtifact(libs.tools);
+    b.installArtifact(tools);
 
 // ------------------
 // SPIRV-Tools-val
 // ------------------
 
     lib_args.name = "SPIRV-Tools-val";
-    libs.tools_val = buildLibrary(b, &spirv_tools_val, lib_args, header_path);
+    const tools_val = buildLibrary(b, &spirv_tools_val, lib_args, header_path);
 
-    libs.tools_val.linkLibrary(libs.tools);
+    tools_val.linkLibrary(tools);
 
     const install_val_step = b.step("SPIRV-Tools-val", "Build and install SPIRV-Tools-val");
-    install_val_step.dependOn(&b.addInstallArtifact(libs.tools_val, .{}).step);
+    install_val_step.dependOn(&b.addInstallArtifact(tools_val, .{}).step);
 
-    b.installArtifact(libs.tools_val);
+    b.installArtifact(tools_val);
 
 // ------------------
 // SPIRV-Tools-opt
 // ------------------
 
     lib_args.name = "SPIRV-Tools-opt";
-    libs.tools_opt = buildLibrary(b, &spirv_tools_opt, lib_args, header_path);
+    const tools_opt = buildLibrary(b, &spirv_tools_opt, lib_args, header_path);
 
-    libs.tools_opt.linkLibrary(libs.tools);
+    tools_opt.linkLibrary(tools);
 
     const install_opt_step = b.step("SPIRV-Tools-opt", "Build and install SPIRV-Tools-opt");
-    install_opt_step.dependOn(&b.addInstallArtifact(libs.tools_opt, .{}).step);
+    install_opt_step.dependOn(&b.addInstallArtifact(tools_opt, .{}).step);
 
-    b.installArtifact(libs.tools_opt);
+    b.installArtifact(tools_opt);
 
 // ------------------
 // SPIRV-Tools-link
 // ------------------
 
     lib_args.name = "SPIRV-Tools-link";
-    libs.tools_link = buildLibrary(b, &spirv_tools_link, lib_args, header_path);
+    const tools_link = buildLibrary(b, &spirv_tools_link, lib_args, header_path);
 
-    libs.tools_link.linkLibrary(libs.tools);
-    libs.tools_link.linkLibrary(libs.tools_val);
-    libs.tools_link.linkLibrary(libs.tools_opt);
+    tools_link.linkLibrary(tools);
+    tools_link.linkLibrary(tools_val);
+    tools_link.linkLibrary(tools_opt);
 
     const install_link_step = b.step("SPIRV-Tools-link", "Build and install SPIRV-Tools-link");
-    install_link_step.dependOn(&b.addInstallArtifact(libs.tools_link, .{}).step);
+    install_link_step.dependOn(&b.addInstallArtifact(tools_link, .{}).step);
 
-    b.installArtifact(libs.tools_link);
+    b.installArtifact(tools_link);
 
 // ------------------
 // SPIRV-Tools-reduce
 // ------------------
 
     lib_args.name = "SPIRV-Tools-reduce";
-    libs.tools_reduce = buildLibrary(b, &spirv_tools_reduce, lib_args, header_path);
+    const tools_reduce = buildLibrary(b, &spirv_tools_reduce, lib_args, header_path);
 
-    libs.tools_reduce.linkLibrary(libs.tools);
-    libs.tools_reduce.linkLibrary(libs.tools_opt);
+    tools_reduce.linkLibrary(tools);
+    tools_reduce.linkLibrary(tools_opt);
     
     const install_reduce_step = b.step("SPIRV-Tools-reduce", "Build and install SPIRV-Tools-reduce");
-    install_reduce_step.dependOn(&b.addInstallArtifact(libs.tools_reduce, .{}).step);
+    install_reduce_step.dependOn(&b.addInstallArtifact(tools_reduce, .{}).step);
 
-    b.installArtifact(libs.tools_reduce);
-
-    return libs;
+    b.installArtifact(tools_reduce);
 }
 
 
@@ -168,7 +131,7 @@ const BuildArgs = struct {
 }; 
 
 
-fn buildLibrary(b: *Build, sources: []const []const u8, args: BuildArgs, comptime header_path: []const u8) *std.Build.Step.Compile {
+fn buildLibrary(b: *Build, sources: []const []const u8, args: BuildArgs, header_path: []const u8) *std.Build.Step.Compile {
     var lib: *std.Build.Step.Compile = undefined;
 
     if (args.shared) {
@@ -213,20 +176,18 @@ fn buildLibrary(b: *Build, sources: []const []const u8, args: BuildArgs, comptim
         std.process.exit(1);
     }
 
-    // NOTE: .cwd_relative is used to ensure that this project can be built regardless of from where it is called
     lib.addCSourceFiles(.{
-        .root = .{ .cwd_relative = sdkPath("/") },
         .files = sources,
         .flags = args.cppflags.items,
     });
 
     lib.defineCMacro("SPIRV_COLOR_TERMINAL", ""); // Pretty lights on by default
 
-    lib.addIncludePath(.{ .cwd_relative = sdkPath("/") } );
-    lib.addIncludePath(.{ .cwd_relative = sdkPath("/" ++ headers.spirv_output_path) } );
+    lib.addIncludePath(b.path(""));
+    lib.addIncludePath(b.path(headers.spirv_output_path));
 
-    lib.addIncludePath(b.path(header_path ++ "/include"));
-    lib.addIncludePath(.{ .cwd_relative = sdkPath("/include") });
+    lib.addIncludePath(b.path(b.pathJoin( &[_][]const u8{ header_path, "include" } )));
+    lib.addIncludePath(b.path("include"));
 
     lib.linkLibCpp();
 

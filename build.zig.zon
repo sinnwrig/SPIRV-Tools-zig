@@ -3,7 +3,9 @@
     .version = "0.1.0",
     .paths = .{
         "external",
+        "generated-include",
         "source",
+        "utils",
         "build.zig",
         "build.zig.zon",
         ".mailmap",
