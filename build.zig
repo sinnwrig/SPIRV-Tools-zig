@@ -12,7 +12,7 @@ pub fn build(b: *Build) !void {
     const debug = b.option(bool, "debug", "Whether to produce detailed debug symbols (g0) or not. These increase binary size considerably.") orelse false;
     const shared = b.option(bool, "shared", "Build spirv-tools as a shared library") orelse false;
     const rebuild_headers = b.option(bool, "rebuild_headers", "Rebuild generated SPIRV-Headers. Requires python3 to be installed on the system.") orelse false;
-    const header_path = b.option([]const u8, "header_path", "Specify a custom SPIRV-Headers installation path. Defaults to external/SPIRV-Headers") orelse "external/SPIRV-Headers";
+    const header_path = b.option([]const u8, "header_path", "Specify a custom SPIRV-Headers installation path. Defaults to external/SPIRV-Headers. Non-root paths are relative to the SPIRV-Tools directory.") orelse "external/SPIRV-Headers";
 
     const no_val = b.option(bool, "no_val", "Skip building SPIRV-Tools-val") orelse false;
     const no_opt = b.option(bool, "no_opt", "Skip building SPIRV-Tools-opt") orelse false;
@@ -213,12 +213,23 @@ fn buildLibrary(b: *Build, sources: []const []const u8, args: BuildArgs, header_
     lib.addIncludePath(b.path(""));
     lib.addIncludePath(b.path(headers.spirv_output_path));
 
-    lib.addIncludePath(b.path(b.pathJoin( &[_][]const u8{ header_path, "include" } )));
+    lib.addIncludePath(pathAuto(b, b.pathJoin( &[_][]const u8{ header_path, "include" } )));
     lib.addIncludePath(b.path("include"));
 
     lib.linkLibCpp();
 
     return lib;
+}
+
+
+fn pathAuto(b: *Build, path: []const u8) Build.LazyPath {
+    if (std.fs.path.isAbsolute(path)) {
+        return .{ .cwd_relative = path };
+    }
+    return .{ .src_path = .{
+        .owner = b,
+        .sub_path = path,
+    } };
 }
 
 
