@@ -14,6 +14,11 @@ pub fn build(b: *Build) !void {
     const rebuild_headers = b.option(bool, "rebuild_headers", "Rebuild generated SPIRV-Headers. Requires python3 to be installed on the system.") orelse false;
     const header_path = b.option([]const u8, "header_path", "Specify a custom SPIRV-Headers installation path. Defaults to external/SPIRV-Headers") orelse "external/SPIRV-Headers";
 
+    const no_val = b.option(bool, "no_val", "Skip building SPIRV-Tools-val") orelse false;
+    const no_opt = b.option(bool, "no_opt", "Skip building SPIRV-Tools-opt") orelse false;
+    const no_link = b.option(bool, "no_link", "Skip building SPIRV-Tools-link") orelse false;
+    const no_reduce = b.option(bool, "no_reduce", "Skip building SPIRV-Tools-reduce") orelse false;
+
     var cppflags = std.ArrayList([]const u8).init(b.allocator);
 
     if (!debug) {
@@ -49,6 +54,14 @@ pub fn build(b: *Build) !void {
         headers.generateSPIRVHeaders(b, header_path);
     }
 
+    if (!no_link and (no_val or no_opt)) {
+        log.err("SPIRV-Tools-link requires building SPIRV-Tools-val and SPIRV-Tools-opt. Skip building link with -Dno_link or disable -Dno_val/-Dno_opt flags.", .{});
+    }
+
+    if (!no_reduce and no_opt) {
+        log.err("SPIRV-Tools-reduce requires building SPIRV-Tools-opt. Skip building reduce with -Dno_reduce or disable -Dno_opt flag.", .{});
+    }
+
 // ------------------
 // SPIRV-Tools
 // ------------------
@@ -65,60 +78,74 @@ pub fn build(b: *Build) !void {
 // SPIRV-Tools-val
 // ------------------
 
-    lib_args.name = "SPIRV-Tools-val";
-    const tools_val = buildLibrary(b, &spirv_tools_val, lib_args, header_path);
+    var tools_val: *Build.Step.Compile = null;
+    if (!no_val)
+    {
+        lib_args.name = "SPIRV-Tools-val";
+        tools_val = buildLibrary(b, &spirv_tools_val, lib_args, header_path);
 
-    tools_val.linkLibrary(tools);
+        tools_val.linkLibrary(tools);
 
-    const install_val_step = b.step("SPIRV-Tools-val", "Build and install SPIRV-Tools-val");
-    install_val_step.dependOn(&b.addInstallArtifact(tools_val, .{}).step);
+        const install_val_step = b.step("SPIRV-Tools-val", "Build and install SPIRV-Tools-val");
+        install_val_step.dependOn(&b.addInstallArtifact(tools_val, .{}).step);
 
-    b.installArtifact(tools_val);
+        b.installArtifact(tools_val);
+    }
 
 // ------------------
 // SPIRV-Tools-opt
 // ------------------
 
-    lib_args.name = "SPIRV-Tools-opt";
-    const tools_opt = buildLibrary(b, &spirv_tools_opt, lib_args, header_path);
+    var tools_opt: *Build.Step.Compile = null;
+    if (!no_opt)
+    {
+        lib_args.name = "SPIRV-Tools-opt";
+        tools_opt = buildLibrary(b, &spirv_tools_opt, lib_args, header_path);
 
-    tools_opt.linkLibrary(tools);
+        tools_opt.linkLibrary(tools);
 
-    const install_opt_step = b.step("SPIRV-Tools-opt", "Build and install SPIRV-Tools-opt");
-    install_opt_step.dependOn(&b.addInstallArtifact(tools_opt, .{}).step);
+        const install_opt_step = b.step("SPIRV-Tools-opt", "Build and install SPIRV-Tools-opt");
+        install_opt_step.dependOn(&b.addInstallArtifact(tools_opt, .{}).step);
 
-    b.installArtifact(tools_opt);
+        b.installArtifact(tools_opt);
+    }
 
 // ------------------
 // SPIRV-Tools-link
 // ------------------
 
-    lib_args.name = "SPIRV-Tools-link";
-    const tools_link = buildLibrary(b, &spirv_tools_link, lib_args, header_path);
+    if (!no_link)
+    {
+        lib_args.name = "SPIRV-Tools-link";
+        const tools_link = buildLibrary(b, &spirv_tools_link, lib_args, header_path);
 
-    tools_link.linkLibrary(tools);
-    tools_link.linkLibrary(tools_val);
-    tools_link.linkLibrary(tools_opt);
+        tools_link.linkLibrary(tools);
+        tools_link.linkLibrary(tools_val);
+        tools_link.linkLibrary(tools_opt);
 
-    const install_link_step = b.step("SPIRV-Tools-link", "Build and install SPIRV-Tools-link");
-    install_link_step.dependOn(&b.addInstallArtifact(tools_link, .{}).step);
+        const install_link_step = b.step("SPIRV-Tools-link", "Build and install SPIRV-Tools-link");
+        install_link_step.dependOn(&b.addInstallArtifact(tools_link, .{}).step);
 
-    b.installArtifact(tools_link);
+        b.installArtifact(tools_link);
+    }
 
 // ------------------
 // SPIRV-Tools-reduce
 // ------------------
 
-    lib_args.name = "SPIRV-Tools-reduce";
-    const tools_reduce = buildLibrary(b, &spirv_tools_reduce, lib_args, header_path);
+    if (!no_reduce)
+    {
+        lib_args.name = "SPIRV-Tools-reduce";
+        const tools_reduce = buildLibrary(b, &spirv_tools_reduce, lib_args, header_path);
 
-    tools_reduce.linkLibrary(tools);
-    tools_reduce.linkLibrary(tools_opt);
-    
-    const install_reduce_step = b.step("SPIRV-Tools-reduce", "Build and install SPIRV-Tools-reduce");
-    install_reduce_step.dependOn(&b.addInstallArtifact(tools_reduce, .{}).step);
+        tools_reduce.linkLibrary(tools);
+        tools_reduce.linkLibrary(tools_opt);
 
-    b.installArtifact(tools_reduce);
+        const install_reduce_step = b.step("SPIRV-Tools-reduce", "Build and install SPIRV-Tools-reduce");
+        install_reduce_step.dependOn(&b.addInstallArtifact(tools_reduce, .{}).step);
+
+        b.installArtifact(tools_reduce);
+    }
 }
 
 
