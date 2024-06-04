@@ -37,5 +37,6 @@ MODULE.bazel.lock
 /.vscode/*
 
 # Zig
-/zig-cache/
-/zig-out/
+.zig-cache/
+zig-cache/
+zig-out/
