@@ -9,7 +9,7 @@ const log = std.log.scoped(.spirv_tools);
 // ----------------------
 
 fn ensureCommandExists(allocator: std.mem.Allocator, name: []const u8, exist_check: []const u8) bool {
-    const result = std.ChildProcess.run(.{
+    const result = std.process.Child.run(.{
         .allocator = allocator,
         .argv = &[_][]const u8{ name, exist_check },
         .cwd = ".",
@@ -36,7 +36,7 @@ fn exec(allocator: std.mem.Allocator, argv: []const []const u8, cwd: []const u8)
         try std.fmt.format(buf.writer(), "{s} ", .{arg});
     }
 
-    var child = std.ChildProcess.init(argv, allocator);
+    var child = std.process.Child.init(argv, allocator);
     child.cwd = cwd;
     _ = try child.spawnAndWait();
 }
