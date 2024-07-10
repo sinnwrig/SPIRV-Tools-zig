@@ -257,6 +257,7 @@ const spirv_tools = [_][]const u8{
     "source/operand.cpp",
     "source/parsed_operand.cpp",
     "source/print.cpp",
+    "source/software_version.cpp",
     "source/spirv_endian.cpp",
     "source/spirv_fuzzer_options.cpp",
     "source/spirv_optimizer_options.cpp",
@@ -266,12 +267,7 @@ const spirv_tools = [_][]const u8{
     "source/table.cpp",
     "source/text.cpp",
     "source/text_handler.cpp",
-    "source/util/bit_vector.cpp",
-    "source/util/parse_number.cpp",
-    "source/util/string_utils.cpp",
-    "source/util/timer.cpp",
 };
-
 
 const spirv_tools_reduce = [_][]const u8{
     "source/reduce/change_operand_reduction_opportunity.cpp",
@@ -281,8 +277,8 @@ const spirv_tools_reduce = [_][]const u8{
     "source/reduce/merge_blocks_reduction_opportunity.cpp",
     "source/reduce/merge_blocks_reduction_opportunity_finder.cpp",
     "source/reduce/operand_to_const_reduction_opportunity_finder.cpp",
-    "source/reduce/operand_to_dominating_id_reduction_opportunity_finder.cpp",
     "source/reduce/operand_to_undef_reduction_opportunity_finder.cpp",
+    "source/reduce/operand_to_dominating_id_reduction_opportunity_finder.cpp",
     "source/reduce/reducer.cpp",
     "source/reduce/reduction_opportunity.cpp",
     "source/reduce/reduction_opportunity_finder.cpp",
@@ -306,8 +302,8 @@ const spirv_tools_reduce = [_][]const u8{
     "source/reduce/structured_loop_to_selection_reduction_opportunity_finder.cpp",
 };
 
-
 const spirv_tools_opt = [_][]const u8{
+    "source/opt/fix_func_call_arguments.cpp",
     "source/opt/aggressive_dead_code_elim_pass.cpp",
     "source/opt/amd_ext_to_khr.cpp",
     "source/opt/analyze_live_input_pass.cpp",
@@ -316,8 +312,8 @@ const spirv_tools_opt = [_][]const u8{
     "source/opt/block_merge_util.cpp",
     "source/opt/build_module.cpp",
     "source/opt/ccp_pass.cpp",
-    "source/opt/cfg.cpp",
     "source/opt/cfg_cleanup_pass.cpp",
+    "source/opt/cfg.cpp",
     "source/opt/code_sink.cpp",
     "source/opt/combine_access_chains.cpp",
     "source/opt/compact_ids_pass.cpp",
@@ -325,15 +321,15 @@ const spirv_tools_opt = [_][]const u8{
     "source/opt/const_folding_rules.cpp",
     "source/opt/constants.cpp",
     "source/opt/control_dependence.cpp",
-    "source/opt/convert_to_half_pass.cpp",
     "source/opt/convert_to_sampled_image_pass.cpp",
+    "source/opt/convert_to_half_pass.cpp",
     "source/opt/copy_prop_arrays.cpp",
     "source/opt/dataflow.cpp",
     "source/opt/dead_branch_elim_pass.cpp",
     "source/opt/dead_insert_elim_pass.cpp",
     "source/opt/dead_variable_elimination.cpp",
-    "source/opt/debug_info_manager.cpp",
     "source/opt/decoration_manager.cpp",
+    "source/opt/debug_info_manager.cpp",
     "source/opt/def_use_manager.cpp",
     "source/opt/desc_sroa.cpp",
     "source/opt/desc_sroa_util.cpp",
@@ -346,12 +342,11 @@ const spirv_tools_opt = [_][]const u8{
     "source/opt/eliminate_dead_members_pass.cpp",
     "source/opt/eliminate_dead_output_stores_pass.cpp",
     "source/opt/feature_manager.cpp",
-    "source/opt/fix_func_call_arguments.cpp",
     "source/opt/fix_storage_class.cpp",
     "source/opt/flatten_decoration_pass.cpp",
     "source/opt/fold.cpp",
-    "source/opt/fold_spec_constant_op_and_composite_pass.cpp",
     "source/opt/folding_rules.cpp",
+    "source/opt/fold_spec_constant_op_and_composite_pass.cpp",
     "source/opt/freeze_spec_constant_value_pass.cpp",
     "source/opt/function.cpp",
     "source/opt/graphics_robust_access_pass.cpp",
@@ -364,8 +359,9 @@ const spirv_tools_opt = [_][]const u8{
     "source/opt/instruction_list.cpp",
     "source/opt/instrument_pass.cpp",
     "source/opt/interface_var_sroa.cpp",
-    "source/opt/interp_fixup_pass.cpp",
     "source/opt/invocation_interlock_placement_pass.cpp",
+    "source/opt/interp_fixup_pass.cpp",
+    "source/opt/opextinst_forward_ref_fixup_pass.cpp",
     "source/opt/ir_context.cpp",
     "source/opt/ir_loader.cpp",
     "source/opt/licm_pass.cpp",
@@ -381,9 +377,9 @@ const spirv_tools_opt = [_][]const u8{
     "source/opt/loop_fusion.cpp",
     "source/opt/loop_fusion_pass.cpp",
     "source/opt/loop_peeling.cpp",
+    "source/opt/loop_utils.cpp",
     "source/opt/loop_unroller.cpp",
     "source/opt/loop_unswitch_pass.cpp",
-    "source/opt/loop_utils.cpp",
     "source/opt/mem_pass.cpp",
     "source/opt/merge_return_pass.cpp",
     "source/opt/modify_maximal_reconvergence.cpp",
@@ -425,7 +421,6 @@ const spirv_tools_opt = [_][]const u8{
     "source/opt/wrap_opkill.cpp",
 };
 
-
 const spirv_tools_util = [_][]const u8{
     "source/util/bit_vector.cpp",
     "source/util/parse_number.cpp",
@@ -433,22 +428,15 @@ const spirv_tools_util = [_][]const u8{
     "source/util/timer.cpp",
 };
 
-
 const spirv_tools_wasm = [_][]const u8{
     "source/wasm/spirv-tools.cpp",
 };
-
 
 const spirv_tools_link = [_][]const u8{
     "source/link/linker.cpp",
 };
 
-
 const spirv_tools_val = [_][]const u8{
-    "source/val/basic_block.cpp",
-    "source/val/construct.cpp",
-    "source/val/function.cpp",
-    "source/val/instruction.cpp",
     "source/val/validate.cpp",
     "source/val/validate_adjacency.cpp",
     "source/val/validate_annotation.cpp",
@@ -465,13 +453,13 @@ const spirv_tools_val = [_][]const u8{
     "source/val/validate_debug.cpp",
     "source/val/validate_decorations.cpp",
     "source/val/validate_derivatives.cpp",
-    "source/val/validate_execution_limitations.cpp",
     "source/val/validate_extensions.cpp",
+    "source/val/validate_execution_limitations.cpp",
     "source/val/validate_function.cpp",
     "source/val/validate_id.cpp",
     "source/val/validate_image.cpp",
-    "source/val/validate_instruction.cpp",
     "source/val/validate_interfaces.cpp",
+    "source/val/validate_instruction.cpp",
     "source/val/validate_layout.cpp",
     "source/val/validate_literals.cpp",
     "source/val/validate_logicals.cpp",
@@ -488,5 +476,9 @@ const spirv_tools_val = [_][]const u8{
     "source/val/validate_scopes.cpp",
     "source/val/validate_small_type_uses.cpp",
     "source/val/validate_type.cpp",
+    "source/val/basic_block.cpp",
+    "source/val/construct.cpp",
+    "source/val/function.cpp",
+    "source/val/instruction.cpp",
     "source/val/validation_state.cpp",
 };
