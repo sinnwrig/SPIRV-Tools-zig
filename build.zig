@@ -56,18 +56,22 @@ pub fn build(b: *Build) !void {
 
     if (!no_link and (no_val or no_opt)) {
         log.err("SPIRV-Tools-link requires building SPIRV-Tools-val and SPIRV-Tools-opt. Skip building link with -Dno_link or disable -Dno_val/-Dno_opt flags.", .{});
+        std.process.exit(1);
     }
 
     if (!no_reduce and no_opt) {
         log.err("SPIRV-Tools-reduce requires building SPIRV-Tools-opt. Skip building reduce with -Dno_reduce or disable -Dno_opt flag.", .{});
+        std.process.exit(1);
     }
+
+    const header_include_path = pathAuto(b, b.pathJoin( &[_][]const u8{ header_path, "include" } ));
 
 // ------------------
 // SPIRV-Tools
 // ------------------
 
     lib_args.name = "SPIRV-Tools";
-    const tools = buildLibrary(b, &(spirv_tools ++ spirv_tools_util), lib_args, header_path);
+    const tools = buildLibrary(b, &(spirv_tools ++ spirv_tools_util), lib_args, header_include_path);
 
     const install_tools_step = b.step("SPIRV-Tools", "Build and install SPIRV-Tools");
     install_tools_step.dependOn(&b.addInstallArtifact(tools, .{}).step);
@@ -82,7 +86,7 @@ pub fn build(b: *Build) !void {
     if (!no_val)
     {
         lib_args.name = "SPIRV-Tools-val";
-        tools_val = buildLibrary(b, &spirv_tools_val, lib_args, header_path);
+        tools_val = buildLibrary(b, &spirv_tools_val, lib_args, header_include_path);
 
         tools_val.linkLibrary(tools);
 
@@ -100,7 +104,7 @@ pub fn build(b: *Build) !void {
     if (!no_opt)
     {
         lib_args.name = "SPIRV-Tools-opt";
-        tools_opt = buildLibrary(b, &spirv_tools_opt, lib_args, header_path);
+        tools_opt = buildLibrary(b, &spirv_tools_opt, lib_args, header_include_path);
 
         tools_opt.linkLibrary(tools);
 
@@ -117,7 +121,7 @@ pub fn build(b: *Build) !void {
     if (!no_link)
     {
         lib_args.name = "SPIRV-Tools-link";
-        const tools_link = buildLibrary(b, &spirv_tools_link, lib_args, header_path);
+        const tools_link = buildLibrary(b, &spirv_tools_link, lib_args, header_include_path);
 
         tools_link.linkLibrary(tools);
         tools_link.linkLibrary(tools_val);
@@ -136,7 +140,7 @@ pub fn build(b: *Build) !void {
     if (!no_reduce)
     {
         lib_args.name = "SPIRV-Tools-reduce";
-        const tools_reduce = buildLibrary(b, &spirv_tools_reduce, lib_args, header_path);
+        const tools_reduce = buildLibrary(b, &spirv_tools_reduce, lib_args, header_include_path);
 
         tools_reduce.linkLibrary(tools);
         tools_reduce.linkLibrary(tools_opt);
@@ -158,13 +162,12 @@ const BuildArgs = struct {
 }; 
 
 
-fn buildLibrary(b: *Build, sources: []const []const u8, args: BuildArgs, header_path: []const u8) *std.Build.Step.Compile {
+fn buildLibrary(b: *Build, sources: []const []const u8, args: BuildArgs, header_path: Build.LazyPath) *std.Build.Step.Compile {
     var lib: *std.Build.Step.Compile = undefined;
 
     if (args.shared) {
         lib = b.addSharedLibrary(.{
             .name = args.name,
-            .root_source_file = b.addWriteFiles().add("empty.c", ""),
             .optimize = args.optimize,
             .target = args.target,
         });
@@ -174,7 +177,6 @@ fn buildLibrary(b: *Build, sources: []const []const u8, args: BuildArgs, header_
     } else {
         lib = b.addStaticLibrary(.{
             .name = args.name,
-            .root_source_file = b.addWriteFiles().add("empty.c", ""),
             .optimize = args.optimize,
             .target = args.target,
         });
@@ -213,7 +215,7 @@ fn buildLibrary(b: *Build, sources: []const []const u8, args: BuildArgs, header_
     lib.addIncludePath(b.path(""));
     lib.addIncludePath(b.path(headers.spirv_output_path));
 
-    lib.addIncludePath(pathAuto(b, b.pathJoin( &[_][]const u8{ header_path, "include" } )));
+    lib.addIncludePath(header_path);
     lib.addIncludePath(b.path("include"));
 
     lib.linkLibCpp();
@@ -232,16 +234,7 @@ fn pathAuto(b: *Build, path: []const u8) Build.LazyPath {
     } };
 }
 
-
-fn sdkPath(comptime suffix: []const u8) []const u8 {
-    if (suffix[0] != '/') @compileError("suffix must be an absolute path");
-    return comptime blk: {
-        const root_dir = std.fs.path.dirname(@src().file) orelse ".";
-        break :blk root_dir ++ suffix;
-    };
-}
-
-// Source files pulled from BUILD.gn
+// Source files pulled from BUILD.gn and CMakeLists.txt definitions
 
 const spirv_tools = [_][]const u8{
     "source/assembly_grammar.cpp",
