@@ -218,7 +218,6 @@ fn buildLibrary(b: *Build, sources: []const []const u8, args: BuildArgs, header_
     lib.addIncludePath(b.path("include"));
 
     lib.linkLibCpp();
-    lib.pie = true;
 
     return lib;
 }
