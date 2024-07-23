@@ -248,6 +248,7 @@ static const spvtools::Extension pygen_variable_exts_SPV_KHR_subgroup_rotate[] =
 static const spvtools::Extension pygen_variable_exts_SPV_KHR_subgroup_uniform_control_flow[] = {spvtools::Extension::kSPV_KHR_subgroup_uniform_control_flow};
 static const spvtools::Extension pygen_variable_exts_SPV_KHR_subgroup_vote[] = {spvtools::Extension::kSPV_KHR_subgroup_vote};
 static const spvtools::Extension pygen_variable_exts_SPV_KHR_uniform_group_instructions[] = {spvtools::Extension::kSPV_KHR_uniform_group_instructions};
+static const spvtools::Extension pygen_variable_exts_SPV_KHR_untyped_pointers[] = {spvtools::Extension::kSPV_KHR_untyped_pointers};
 static const spvtools::Extension pygen_variable_exts_SPV_KHR_variable_pointers[] = {spvtools::Extension::kSPV_KHR_variable_pointers};
 static const spvtools::Extension pygen_variable_exts_SPV_KHR_vulkan_memory_model[] = {spvtools::Extension::kSPV_KHR_vulkan_memory_model};
 static const spvtools::Extension pygen_variable_exts_SPV_KHR_workgroup_memory_explicit_layout[] = {spvtools::Extension::kSPV_KHR_workgroup_memory_explicit_layout};
@@ -1215,6 +1216,7 @@ static const spv_operand_desc_t pygen_variable_CapabilityEntries[] = {
   {"RoundingModeRTZ", 4468, 0, nullptr, 1, pygen_variable_exts_SPV_KHR_float_controls, {}, SPV_SPIRV_VERSION_WORD(1,4), 0xffffffffu},
   {"RayQueryProvisionalKHR", 4471, 1, pygen_variable_caps_Shader, 1, pygen_variable_exts_SPV_KHR_ray_query, {}, 0xffffffffu, 0xffffffffu},
   {"RayQueryKHR", 4472, 1, pygen_variable_caps_Shader, 1, pygen_variable_exts_SPV_KHR_ray_query, {}, 0xffffffffu, 0xffffffffu},
+  {"UntypedPointersKHR", 4473, 0, nullptr, 1, pygen_variable_exts_SPV_KHR_untyped_pointers, {}, 0xffffffffu, 0xffffffffu},
   {"RayTraversalPrimitiveCullingKHR", 4478, 2, pygen_variable_caps_RayQueryKHRRayTracingKHR, 2, pygen_variable_exts_SPV_KHR_ray_querySPV_KHR_ray_tracing, {}, 0xffffffffu, 0xffffffffu},
   {"RayTracingKHR", 4479, 1, pygen_variable_caps_Shader, 1, pygen_variable_exts_SPV_KHR_ray_tracing, {}, 0xffffffffu, 0xffffffffu},
   {"TextureSampleWeightedQCOM", 4484, 0, nullptr, 1, pygen_variable_exts_SPV_QCOM_image_processing, {}, 0xffffffffu, 0xffffffffu},
