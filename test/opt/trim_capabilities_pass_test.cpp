@@ -63,8 +63,8 @@ TEST_F(TrimCapabilitiesPassTest, CheckKnownAliasTransformations) {
                OpCapability DotProductInput4x8BitKHR
                OpCapability DotProductInput4x8BitPackedKHR
                OpCapability DotProductKHR
-               OpCapability ComputeDerivativeGroupQuadsNV
-               OpCapability ComputeDerivativeGroupLinearNV
+               OpCapability ComputeDerivativeGroupQuadsKHR
+               OpCapability ComputeDerivativeGroupLinearKHR
 ; CHECK: OpCapability Linkage
 ; CHECK-NOT: OpCapability StorageUniform16
 ; CHECK-NOT: OpCapability StorageUniformBufferBlock16
@@ -91,8 +91,8 @@ TEST_F(TrimCapabilitiesPassTest, CheckKnownAliasTransformations) {
 ; CHECK-NOT: OpCapability DotProductInput4x8BitKHR
 ; CHECK-NOT: OpCapability DotProductInput4x8BitPackedKHR
 ; CHECK-NOT: OpCapability DotProductKHR
-; CHECK-NOT: OpCapability ComputeDerivativeGroupQuadsNV
-; CHECK-NOT: OpCapability ComputeDerivativeGroupLinearNV
+; CHECK-NOT: OpCapability ComputeDerivativeGroupQuadsKHR
+; CHECK-NOT: OpCapability ComputeDerivativeGroupLinearKHR
 ; CHECK: OpCapability UniformAndStorageBuffer16BitAccess
 ; CHECK: OpCapability StorageBuffer16BitAccess
 ; CHECK: OpCapability ShaderViewportIndexLayerEXT
@@ -2136,11 +2136,11 @@ TEST_F(TrimCapabilitiesPassTest, Float64_RemainsWhenUsed) {
 TEST_F(TrimCapabilitiesPassTest,
        ComputeDerivativeGroupQuads_ReamainsWithExecMode) {
   const std::string kTest = R"(
-               OpCapability ComputeDerivativeGroupQuadsNV
-               OpCapability ComputeDerivativeGroupLinearNV
-; CHECK-NOT:   OpCapability ComputeDerivativeGroupLinearNV
-; CHECK:       OpCapability ComputeDerivativeGroupQuadsNV
-; CHECK-NOT:   OpCapability ComputeDerivativeGroupLinearNV
+               OpCapability ComputeDerivativeGroupQuadsKHR
+               OpCapability ComputeDerivativeGroupLinearKHR
+; CHECK-NOT:   OpCapability ComputeDerivativeGroupLinearKHR
+; CHECK:       OpCapability ComputeDerivativeGroupQuadsKHR
+; CHECK-NOT:   OpCapability ComputeDerivativeGroupLinearKHR
                OpCapability Shader
 ; CHECK:       OpExtension "SPV_NV_compute_shader_derivatives"
                OpExtension "SPV_NV_compute_shader_derivatives"
@@ -2162,11 +2162,11 @@ TEST_F(TrimCapabilitiesPassTest,
 TEST_F(TrimCapabilitiesPassTest,
        ComputeDerivativeGroupLinear_ReamainsWithExecMode) {
   const std::string kTest = R"(
-               OpCapability ComputeDerivativeGroupLinearNV
-               OpCapability ComputeDerivativeGroupQuadsNV
-; CHECK-NOT:   OpCapability ComputeDerivativeGroupQuadsNV
-; CHECK:       OpCapability ComputeDerivativeGroupLinearNV
-; CHECK-NOT:   OpCapability ComputeDerivativeGroupQuadsNV
+               OpCapability ComputeDerivativeGroupLinearKHR
+               OpCapability ComputeDerivativeGroupQuadsKHR
+; CHECK-NOT:   OpCapability ComputeDerivativeGroupQuadsKHR
+; CHECK:       OpCapability ComputeDerivativeGroupLinearKHR
+; CHECK-NOT:   OpCapability ComputeDerivativeGroupQuadsKHR
                OpCapability Shader
 ; CHECK:       OpExtension "SPV_NV_compute_shader_derivatives"
                OpExtension "SPV_NV_compute_shader_derivatives"
@@ -3147,6 +3147,69 @@ TEST_P(TrimCapabilitiesPassTestSubgroupClustered_Unsigned,
   const auto result = SinglePassRunAndMatch<TrimCapabilitiesPass>(
       kTest, /* do_validation= */ true);
   EXPECT_EQ(std::get<1>(result), Pass::Status::SuccessWithChange);
+}
+
+TEST_F(TrimCapabilitiesPassTest, InterpolationFunction_RemovedIfNotUsed) {
+  const std::string kTest = R"(
+               OpCapability Shader
+               OpCapability InterpolationFunction
+; CHECK-NOT:   OpCapability InterpolationFunction
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %out_var_SV_Target
+               OpExecutionMode %main OriginUpperLeft
+               OpSource HLSL 660
+               OpName %out_var_SV_Target "out.var.SV_Target"
+               OpName %main "main"
+               OpDecorate %out_var_SV_Target Location 0
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+       %void = OpTypeVoid
+          %7 = OpTypeFunction %void
+%out_var_SV_Target = OpVariable %_ptr_Output_v4float Output
+       %main = OpFunction %void None %7
+          %8 = OpLabel
+               OpReturn
+               OpFunctionEnd
+  )";
+  const auto result =
+      SinglePassRunAndMatch<TrimCapabilitiesPass>(kTest, /* skip_nop= */ false);
+  EXPECT_EQ(std::get<1>(result), Pass::Status::SuccessWithChange);
+}
+
+TEST_F(TrimCapabilitiesPassTest,
+       InterpolationFunction_RemainsWithInterpolateAtCentroid) {
+  const std::string kTest = R"(
+               OpCapability Shader
+               OpCapability InterpolationFunction
+; CHECK:       OpCapability InterpolationFunction
+     %std450 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %out_var_SV_Target %gl_PointCoord
+               OpExecutionMode %main OriginUpperLeft
+               OpSource HLSL 660
+               OpName %out_var_SV_Target "out.var.SV_Target"
+               OpName %main "main"
+               OpDecorate %out_var_SV_Target Location 0
+               OpDecorate %gl_PointCoord BuiltIn PointCoord
+      %float = OpTypeFloat 32
+    %v2float = OpTypeVector %float 2
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+%_ptr_Input_v2float = OpTypePointer Input %v2float
+       %void = OpTypeVoid
+          %7 = OpTypeFunction %void
+%out_var_SV_Target = OpVariable %_ptr_Output_v4float Output
+%gl_PointCoord = OpVariable %_ptr_Input_v2float Input
+       %main = OpFunction %void None %7
+          %8 = OpLabel
+          %9 = OpExtInst %v4float %std450 InterpolateAtCentroid %gl_PointCoord
+               OpReturn
+               OpFunctionEnd
+  )";
+  const auto result =
+      SinglePassRunAndMatch<TrimCapabilitiesPass>(kTest, /* skip_nop= */ false);
+  EXPECT_EQ(std::get<1>(result), Pass::Status::SuccessWithoutChange);
 }
 
 INSTANTIATE_TEST_SUITE_P(
