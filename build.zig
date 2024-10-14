@@ -5,7 +5,6 @@ const Build = std.Build;
 
 const log = std.log.scoped(.spirv_tools_zig);
 
-
 pub fn build(b: *Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.standardTargetOptions(.{});
@@ -27,16 +26,16 @@ pub fn build(b: *Build) !void {
 
     try cppflags.append("-std=c++17");
 
-    const base_flags = &.{ 
+    const base_flags = &.{
         "-Wno-unused-command-line-argument",
         "-Wno-unused-variable",
         "-Wno-missing-exception-spec",
         "-Wno-macro-redefined",
         "-Wno-unknown-attributes",
         "-Wno-implicit-fallthrough",
-        "-Wno-newline-eof", 
-        "-Wno-unreachable-code-break", 
-        "-Wno-unreachable-code-return", 
+        "-Wno-newline-eof",
+        "-Wno-unreachable-code-break",
+        "-Wno-unreachable-code-return",
     };
 
     try cppflags.appendSlice(base_flags);
@@ -63,11 +62,11 @@ pub fn build(b: *Build) !void {
         std.process.exit(1);
     }
 
-    const header_include_path = pathAuto(b, b.pathJoin( &[_][]const u8{ header_path, "include" } ));
+    const header_include_path = pathAuto(b, b.pathJoin(&[_][]const u8{ header_path, "include" }));
 
-// ------------------
-// SPIRV-Tools
-// ------------------
+    // ------------------
+    // SPIRV-Tools
+    // ------------------
 
     lib_args.name = "SPIRV-Tools";
     const tools = buildLibrary(b, &(spirv_tools ++ spirv_tools_util), lib_args, header_include_path);
@@ -77,13 +76,12 @@ pub fn build(b: *Build) !void {
 
     b.installArtifact(tools);
 
-// ------------------
-// SPIRV-Tools-val
-// ------------------
+    // ------------------
+    // SPIRV-Tools-val
+    // ------------------
 
     var tools_val: *Build.Step.Compile = undefined;
-    if (!no_val)
-    {
+    if (!no_val) {
         lib_args.name = "SPIRV-Tools-val";
         tools_val = buildLibrary(b, &spirv_tools_val, lib_args, header_include_path);
 
@@ -95,13 +93,12 @@ pub fn build(b: *Build) !void {
         b.installArtifact(tools_val);
     }
 
-// ------------------
-// SPIRV-Tools-opt
-// ------------------
+    // ------------------
+    // SPIRV-Tools-opt
+    // ------------------
 
     var tools_opt: *Build.Step.Compile = undefined;
-    if (!no_opt)
-    {
+    if (!no_opt) {
         lib_args.name = "SPIRV-Tools-opt";
         tools_opt = buildLibrary(b, &spirv_tools_opt, lib_args, header_include_path);
 
@@ -113,12 +110,11 @@ pub fn build(b: *Build) !void {
         b.installArtifact(tools_opt);
     }
 
-// ------------------
-// SPIRV-Tools-link
-// ------------------
+    // ------------------
+    // SPIRV-Tools-link
+    // ------------------
 
-    if (!no_link)
-    {
+    if (!no_link) {
         lib_args.name = "SPIRV-Tools-link";
         const tools_link = buildLibrary(b, &spirv_tools_link, lib_args, header_include_path);
 
@@ -132,12 +128,11 @@ pub fn build(b: *Build) !void {
         b.installArtifact(tools_link);
     }
 
-// ------------------
-// SPIRV-Tools-reduce
-// ------------------
+    // ------------------
+    // SPIRV-Tools-reduce
+    // ------------------
 
-    if (!no_reduce)
-    {
+    if (!no_reduce) {
         lib_args.name = "SPIRV-Tools-reduce";
         const tools_reduce = buildLibrary(b, &spirv_tools_reduce, lib_args, header_include_path);
 
@@ -151,15 +146,13 @@ pub fn build(b: *Build) !void {
     }
 }
 
-
 const BuildArgs = struct {
     cppflags: std.ArrayList([]const u8),
-    optimize: std.builtin.OptimizeMode, 
+    optimize: std.builtin.OptimizeMode,
     target: std.Build.ResolvedTarget,
-    shared: bool, 
-    name: []const u8, 
-}; 
-
+    shared: bool,
+    name: []const u8,
+};
 
 fn buildLibrary(b: *Build, sources: []const []const u8, args: BuildArgs, header_path: Build.LazyPath) *std.Build.Step.Compile {
     var lib: *std.Build.Step.Compile = undefined;
@@ -193,7 +186,7 @@ fn buildLibrary(b: *Build, sources: []const []const u8, args: BuildArgs, header_
         lib.defineCMacro("SPIRV_IOS", "");
     } else if (tag == .tvos) {
         lib.defineCMacro("SPIRV_TVOS", "");
-    } else if (tag == .kfreebsd) {
+    } else if (tag == .freebsd) {
         lib.defineCMacro("SPIRV_FREEBSD", "");
     } else if (tag == .openbsd) {
         lib.defineCMacro("SPIRV_OPENBSD", "");
@@ -222,7 +215,6 @@ fn buildLibrary(b: *Build, sources: []const []const u8, args: BuildArgs, header_
 
     return lib;
 }
-
 
 fn pathAuto(b: *Build, path: []const u8) Build.LazyPath {
     if (std.fs.path.isAbsolute(path)) {
@@ -263,7 +255,7 @@ const spirv_tools = [_][]const u8{
 };
 
 const spirv_tools_reduce = [_][]const u8{
-"source/reduce/change_operand_reduction_opportunity.cpp",
+    "source/reduce/change_operand_reduction_opportunity.cpp",
     "source/reduce/change_operand_to_undef_reduction_opportunity.cpp",
     "source/reduce/conditional_branch_to_simple_conditional_branch_opportunity_finder.cpp",
     "source/reduce/conditional_branch_to_simple_conditional_branch_reduction_opportunity.cpp",
